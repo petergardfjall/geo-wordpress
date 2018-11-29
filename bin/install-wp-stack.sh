@@ -11,7 +11,7 @@ set -e
 
 script=$(basename ${0})
 bindir=$(dirname ${0})
-terraform_state=$(realpath ${bindir}/../terraform.tfstate)w
+terraform_state=$(realpath ${bindir}/../terraform.tfstate)
 chart_dir=$(realpath ${bindir}/../manifests/helm)
 assets_dir=./assets
 
