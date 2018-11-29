@@ -134,9 +134,10 @@ resource "google_compute_firewall" "cluster_firewall" {
 # only allow incoming traffic to cluster nodes on the specified tcp ports
 # and from the specified source IP ranges
 resource "google_compute_firewall" "node_firewall" {
-  name    = "${local.node_firewall_name}"
-  network = "${google_compute_network.net.name}"
-
+  name     = "${local.node_firewall_name}"
+  network  = "${google_compute_network.net.name}"
+  # make sure prio is higher than load-balancer's firewall
+  priority = "10000"
   allow {
     protocol = "tcp"
     ports    = "${var.node_firewall_port_openings}"
