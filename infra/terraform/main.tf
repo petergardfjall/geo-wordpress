@@ -136,8 +136,8 @@ resource "google_compute_firewall" "cluster_firewall" {
 resource "google_compute_firewall" "node_firewall" {
   name     = "${local.node_firewall_name}"
   network  = "${google_compute_network.net.name}"
-  # make sure prio is higher than load-balancer's firewall
-  priority = "10000"
+  # make sure prio is higher (that is, lower value) than load-balancer's firewall
+  priority = "100"
   allow {
     protocol = "tcp"
     ports    = "${var.node_firewall_port_openings}"
@@ -190,7 +190,7 @@ module "cluster_2" {
 module "global_lb" {
   source            = "github.com/GoogleCloudPlatform/terraform-google-lb-http"
   name              = "${local.lb_name}"
-  target_tags       = ["node", "worker"]
+  target_tags       = ["node"]
   firewall_networks = ["${google_compute_network.net.name}"]
 
   backends          = {
