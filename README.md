@@ -68,10 +68,8 @@ If Terraform finished successfully, just run:
 
      ./bin/install-wp-stack.sh
 
-The script will (eventually) output a `kubeconfig` file which can be used to
-communicate with the clusters using `kubectl`.
-
-When it has been created, issue
+The script will output a `kubeconfig` file which can be used to communicate with
+the clusters using `kubectl`. To use it, set
 
     export KUBECONFIG=$PWD/kubeconfig
 
@@ -91,7 +89,7 @@ Wordpress installation page and your ready to go.
 ### Verify
 You can verify that files are properly synchronized by, for instance, uploading
 media and checking, for each cluster, that they have the same content in their
-upload folder. For each cluster, run something like:
+upload folder. For each cluster, run something like (replace pod name):
 
     watch kubectl exec -n wp wordpress-654b4dd45b-7j9fp -- ls -al /var/www/html/wp-content/uploads/2018/11
 
