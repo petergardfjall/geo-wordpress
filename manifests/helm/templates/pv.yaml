@@ -1,0 +1,41 @@
+# TODO: no longer needed, we use an nfs StorageClass to dynamically create the nfs volume
+# apiVersion: v1
+# kind: PersistentVolume
+# metadata:
+#   name: nfs
+# spec:
+#   capacity:
+#     storage: 2Gi
+#   accessModes:
+#     - ReadWriteMany
+#   nfs:
+#     server: {{ .Values.nfs.serviceIP }}
+#     path: /
+
+---
+
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: local-nfs
+  namespace: {{ .Values.namespace }}
+provisioner: {{ .Values.nfs.provisionerName }}
+mountOptions:
+  - vers=4.1
+
+---
+
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: nfs
+  namespace: {{ .Values.namespace }}
+  annotations:
+    volume.beta.kubernetes.io/storage-class: "local-nfs"
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: "local-nfs"
+  resources:
+    requests:
+      storage: 2Gi

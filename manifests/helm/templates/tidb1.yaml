@@ -1,0 +1,275 @@
+#
+# Placement Driver (PD)
+#
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: pd-nodeport
+  namespace: {{ .Values.namespace }}
+spec:
+  type: NodePort
+  selector:
+    app: pd
+  ports:
+  - name: client
+    protocol: TCP
+    port: 2379
+    targetPort: 2379
+    nodePort: {{ .Values.pd.clientNodePort }}
+  - name: peer
+    protocol: TCP
+    port: 2380
+    targetPort: 2380
+    nodePort: {{ .Values.pd.peerNodePort }}
+
+---
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: pd-service
+  namespace: {{ .Values.namespace }}
+spec:
+  type: ClusterIP
+  selector:
+    app: pd
+  ports:
+  - name: client
+    protocol: TCP
+    port: 2379
+    targetPort: 2379
+  - name: peer
+    protocol: TCP
+    port: 2380
+    targetPort: 2380
+
+---
+
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: pd-config
+  namespace: {{ .Values.namespace }}
+data:
+  pd.toml: |-
+    [log]
+    level = "info"
+    [replication]
+    # The number of replicas for each region.
+    max-replicas = 3
+    # The label keys specified the location of a store.
+    # The placement priorities is implied by the order of label keys.
+    # For example, ["zone", "rack"] means that we should place replicas to
+    # different zones first, then to different racks if we don't have enough zones.
+    location-labels = ["zone","host"]
+    [metric]
+    # disable prometheus push gateway
+    address = ""
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pd1
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pd
+  template:
+    metadata:
+      labels:
+        app: pd
+    spec:
+      containers:
+      - name: pd
+        image: {{ .Values.pd.image }}
+        imagePullPolicy: "IfNotPresent"
+        args:
+        - --name=pd1
+        - --client-urls=http://0.0.0.0:2379
+        - --peer-urls=http://0.0.0.0:2380
+        - --advertise-client-urls=http://{{ index .Values.pd.ips 1 }}:{{ .Values.pd.clientNodePort }}
+        - --advertise-peer-urls=http://{{ index .Values.pd.ips 1 }}:{{ .Values.pd.peerNodePort }}
+        - --initial-cluster=pd0=http://{{ index .Values.pd.ips 0 }}:{{ .Values.pd.peerNodePort }},pd1=http://{{ index .Values.pd.ips 1 }}:{{ .Values.pd.peerNodePort }},pd2=http://{{ index .Values.pd.ips 2 }}:{{ .Values.pd.peerNodePort }}
+        - --data-dir=/data/pd
+        - --config=/config/pd.toml
+        volumeMounts:
+        - name: pd-config-vol
+          readOnly: true
+          mountPath: /config
+        - name: tidb-data-vol
+          mountPath: /data
+      volumes:
+      - name: pd-config-vol
+        configMap:
+          name: pd-config
+      - name: tidb-data-vol
+        hostPath:
+          path: /var/tidb/data
+
+---
+#
+# TiKV
+#
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: tikv-nodeport
+  namespace: {{ .Values.namespace }}
+spec:
+  type: NodePort
+  selector:
+    app: tikv
+  ports:
+  - name: client
+    protocol: TCP
+    port: 20160
+    targetPort: 20160
+    nodePort: {{ .Values.tikv.nodePort }}
+
+---
+
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: tikv-config
+  namespace: {{ .Values.namespace }}
+data:
+  tikv.toml: |-
+    log-level = "info"
+    [metric]
+    # disable Prometheus push gateway
+    address = ""
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tikv1
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tikv
+  template:
+    metadata:
+      labels:
+        app: tikv
+    spec:
+      containers:
+      - name: tikv
+        image: {{ .Values.tikv.image }}
+        imagePullPolicy: "IfNotPresent"
+        args:
+        - --addr=0.0.0.0:20160
+        - --advertise-addr={{ index .Values.tikv.ips 1 }}:{{ .Values.tikv.nodePort }}
+        - --data-dir=/data
+        - --pd={{ index .Values.pd.ips 0 }}:{{ .Values.pd.clientNodePort }},{{ index .Values.pd.ips 1 }}:{{ .Values.pd.clientNodePort }},{{ index .Values.pd.ips 2 }}:{{ .Values.pd.clientNodePort }}
+        - --config=/config/tikv.toml
+        - --labels=zone=zone1,host=0
+        volumeMounts:
+        - name: tikv-config-vol
+          readOnly: true
+          mountPath: /config
+        - name: tikv-data-vol
+          mountPath: /data
+      volumes:
+      - name: tikv-config-vol
+        configMap:
+          name: tikv-config
+      - name: tikv-data-vol
+        hostPath:
+          path: /var/tikv/data
+
+---
+#
+# TiDB
+#
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: tidb-nodeport
+  namespace: {{ .Values.namespace }}
+spec:
+  type: NodePort
+  selector:
+    app: tidb
+  ports:
+  - name: mysql
+    protocol: TCP
+    port: 4000
+    targetPort: 4000
+    nodePort: {{ .Values.tidb.mysqlNodePort }}
+
+---
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: tidb-service
+  namespace: {{ .Values.namespace }}
+spec:
+  type: ClusterIP
+  selector:
+    app: tidb
+  ports:
+  - name: mysql
+    protocol: TCP
+    port: 4000
+    targetPort: 4000
+
+---
+
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: tidb-config
+  namespace: {{ .Values.namespace }}
+data:
+  tidb.toml: |-
+    [log]
+    level = "info"
+    format = "text"
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tidb1
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tidb
+  template:
+    metadata:
+      labels:
+        app: tidb
+    spec:
+      containers:
+      - name: tidb
+        image: {{ .Values.tidb.image }}
+        imagePullPolicy: "IfNotPresent"
+        args:
+        - --host=0.0.0.0
+        - --P=4000
+        - --store=tikv
+        - --path={{ index .Values.pd.ips 0 }}:{{ .Values.pd.clientNodePort }},{{ index .Values.pd.ips 1 }}:{{ .Values.pd.clientNodePort }},{{ index .Values.pd.ips 2 }}:{{ .Values.pd.clientNodePort }}
+        - --config=/config/tidb.toml
+        - --metrics-addr=""
+        volumeMounts:
+        - name: tidb-config-vol
+          readOnly: true
+          mountPath: /config
+      volumes:
+      - name: tidb-config-vol
+        configMap:
+          name: tidb-config

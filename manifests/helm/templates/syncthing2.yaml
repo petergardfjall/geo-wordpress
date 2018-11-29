@@ -1,0 +1,218 @@
+#
+# SyncThing
+#
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: syncthing-peer-nodeport
+  namespace: {{ .Values.namespace }}
+spec:
+  type: NodePort
+  selector:
+    app: syncthing
+  ports:
+  - name: peer
+    port: 22000
+    targetPort: 22000
+    nodePort: {{ .Values.syncthing.peerNodePort }}
+
+---
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: syncthing-ui-nodeport
+  namespace: {{ .Values.namespace }}
+spec:
+  type: NodePort
+  selector:
+    app: syncthing
+  ports:
+  - name: ui
+    port: 8383
+    targetPort: 8384
+    nodePort: {{ .Values.syncthing.uiNodePort }}
+
+---
+
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: syncthing-config
+  namespace: {{ .Values.namespace }}
+data:
+  config.xml: |-
+    <configuration version="28">
+        <folder id="default" label="Sync Folder" path="/sync" type="sendreceive" rescanIntervalS="3600" fsWatcherEnabled="true" fsWatcherDelayS="1" ignorePerms="false" autoNormalize="true">
+            <filesystemType>basic</filesystemType>
+            <device id="HTNST7K-BXQ7HPO-RVFETSJ-YHFKWD2-GEMF2XI-RGVW3M6-T736LIG-YX7UMAC" introducedBy=""></device>
+            <device id="JX7WYOJ-7GSFF2M-BZMRGXH-N63ZLF6-JSYZFL3-3JKIQMI-BWM4PVL-SM774QQ" introducedBy=""></device>
+            <device id="QN667UK-RUI7SSM-ILTSJKY-CUDVGMK-UAGFYUL-VXCUTPA-DEHRJNB-ZZBTRQT" introducedBy=""></device>
+            <minDiskFree unit="%">1</minDiskFree>
+            <versioning></versioning>
+            <copiers>0</copiers>
+            <pullerMaxPendingKiB>0</pullerMaxPendingKiB>
+            <hashers>0</hashers>
+            <order>random</order>
+            <ignoreDelete>false</ignoreDelete>
+            <scanProgressIntervalS>0</scanProgressIntervalS>
+            <pullerPauseS>0</pullerPauseS>
+            <maxConflicts>-1</maxConflicts>
+            <disableSparseFiles>false</disableSparseFiles>
+            <disableTempIndexes>false</disableTempIndexes>
+            <paused>false</paused>
+            <weakHashThresholdPct>25</weakHashThresholdPct>
+            <markerName>.stfolder</markerName>
+            <useLargeBlocks>false</useLargeBlocks>
+        </folder>
+        <device id="QN667UK-RUI7SSM-ILTSJKY-CUDVGMK-UAGFYUL-VXCUTPA-DEHRJNB-ZZBTRQT" name="sync0" compression="metadata" introducer="false" skipIntroductionRemovals="false" introducedBy="">
+            <address>tcp://{{ index .Values.syncthing.ips 0 }}:{{ .Values.syncthing.peerNodePort }}</address>
+            <paused>false</paused>
+            <autoAcceptFolders>false</autoAcceptFolders>
+            <maxSendKbps>0</maxSendKbps>
+            <maxRecvKbps>0</maxRecvKbps>
+        </device>
+        <device id="HTNST7K-BXQ7HPO-RVFETSJ-YHFKWD2-GEMF2XI-RGVW3M6-T736LIG-YX7UMAC" name="sync1" compression="metadata" introducer="false" skipIntroductionRemovals="false" introducedBy="">
+            <address>tcp://{{ index .Values.syncthing.ips 1 }}:{{ .Values.syncthing.peerNodePort }}</address>
+            <paused>false</paused>
+            <autoAcceptFolders>false</autoAcceptFolders>
+            <maxSendKbps>0</maxSendKbps>
+            <maxRecvKbps>0</maxRecvKbps>
+        </device>
+        <device id="JX7WYOJ-7GSFF2M-BZMRGXH-N63ZLF6-JSYZFL3-3JKIQMI-BWM4PVL-SM774QQ" name="sync2" compression="metadata" introducer="false" skipIntroductionRemovals="false" introducedBy="">
+            <address>dynamic</address>
+            <paused>false</paused>
+            <autoAcceptFolders>false</autoAcceptFolders>
+            <maxSendKbps>0</maxSendKbps>
+            <maxRecvKbps>0</maxRecvKbps>
+        </device>
+        <gui enabled="true" tls="false" debugging="false">
+            <address>127.0.0.1:8384</address>
+            <apikey>iA6QZhNpmJNPw5JTwYJ295iTXXGbTsgw</apikey>
+            <theme>default</theme>
+        </gui>
+        <ldap></ldap>
+        <options>
+            <listenAddress>default</listenAddress>
+            <globalAnnounceServer>default</globalAnnounceServer>
+            <globalAnnounceEnabled>true</globalAnnounceEnabled>
+            <localAnnounceEnabled>true</localAnnounceEnabled>
+            <localAnnouncePort>21027</localAnnouncePort>
+            <localAnnounceMCAddr>[ff12::8384]:21027</localAnnounceMCAddr>
+            <maxSendKbps>0</maxSendKbps>
+            <maxRecvKbps>0</maxRecvKbps>
+            <reconnectionIntervalS>60</reconnectionIntervalS>
+            <relaysEnabled>true</relaysEnabled>
+            <relayReconnectIntervalM>10</relayReconnectIntervalM>
+            <startBrowser>true</startBrowser>
+            <natEnabled>true</natEnabled>
+            <natLeaseMinutes>60</natLeaseMinutes>
+            <natRenewalMinutes>30</natRenewalMinutes>
+            <natTimeoutSeconds>10</natTimeoutSeconds>
+            <urAccepted>-1</urAccepted>
+            <urSeen>3</urSeen>
+            <urUniqueID>tog7zzRG</urUniqueID>
+            <urURL>https://data.syncthing.net/newdata</urURL>
+            <urPostInsecurely>false</urPostInsecurely>
+            <urInitialDelayS>1800</urInitialDelayS>
+            <restartOnWakeup>true</restartOnWakeup>
+            <autoUpgradeIntervalH>12</autoUpgradeIntervalH>
+            <upgradeToPreReleases>false</upgradeToPreReleases>
+            <keepTemporariesH>24</keepTemporariesH>
+            <cacheIgnoredFiles>false</cacheIgnoredFiles>
+            <progressUpdateIntervalS>5</progressUpdateIntervalS>
+            <limitBandwidthInLan>false</limitBandwidthInLan>
+            <minHomeDiskFree unit="%">1</minHomeDiskFree>
+            <releasesURL>https://upgrades.syncthing.net/meta.json</releasesURL>
+            <overwriteRemoteDeviceNamesOnConnect>false</overwriteRemoteDeviceNamesOnConnect>
+            <tempIndexMinBlocks>10</tempIndexMinBlocks>
+            <trafficClass>0</trafficClass>
+            <defaultFolderPath>~</defaultFolderPath>
+            <setLowPriority>true</setLowPriority>
+            <minHomeDiskFreePct>0</minHomeDiskFreePct>
+        </options>
+    </configuration>
+
+  cert.pem: |-
+    -----BEGIN CERTIFICATE-----
+    MIIBmjCCASCgAwIBAgIIFL+lSJI25aAwCgYIKoZIzj0EAwMwFDESMBAGA1UEAxMJ
+    c3luY3RoaW5nMB4XDTE4MTExNDA5MzQxNVoXDTQ5MTIzMTIzNTk1OVowFDESMBAG
+    A1UEAxMJc3luY3RoaW5nMHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEIE5Qyj/2LI2Y
+    gizx2jwm9Lw0SC/Tf3mG6rXgN3pP+UWADVyYdWGzO8bEE7YcWJ04VRSYyKrGzzl7
+    YJAbGvC6EPSCqJvA0vsUWe7QQMxaUPNOaMOpe2v4gFHIgLbQywbmoz8wPTAOBgNV
+    HQ8BAf8EBAMCBaAwHQYDVR0lBBYwFAYIKwYBBQUHAwEGCCsGAQUFBwMCMAwGA1Ud
+    EwEB/wQCMAAwCgYIKoZIzj0EAwMDaAAwZQIwQzq4qo0C12QFfsns8byw+sjGS0Xm
+    PeN++wRwG9PMNiGG7lzlEKbQxrS9QPcWLYAmAjEAleefLyEx6nfpGsR+ZjIb3HYC
+    x9XaY+CgoMz4T9Fx1fPsN8yZ0UqeEzeAOZlqJ3F0
+    -----END CERTIFICATE-----
+  key.pem: |-
+    -----BEGIN EC PRIVATE KEY-----
+    MIGkAgEBBDDppztdV1AqF4PkZ4DfuEtG+tzw7hL4qinCakWxnYuaIIcmMtOYNV6i
+    vS1CBcVCB2mgBwYFK4EEACKhZANiAAQgTlDKP/YsjZiCLPHaPCb0vDRIL9N/eYbq
+    teA3ek/5RYANXJh1YbM7xsQTthxYnThVFJjIqsbPOXtgkBsa8LoQ9IKom8DS+xRZ
+    7tBAzFpQ805ow6l7a/iAUciAttDLBuY=
+    -----END EC PRIVATE KEY-----
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: syncthing
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: syncthing
+  template:
+    metadata:
+      labels:
+        app: syncthing
+    spec:
+      # step one is to get configuration from the config-map to the /config
+      # folder, which needs to be writable by syncthing (it keeps its db there)
+      initContainers:
+      - name: prepare-config-dir
+        image: busybox
+        command: ['sh', '-c', 'cp /configmap/* /config/ && chown -R 33:33 /config/']
+        volumeMounts:
+        - name: configmap-vol
+          readOnly: true
+          mountPath: /configmap
+        - name: config-vol
+          mountPath: /config
+      # remove index.html placed in exported dir by nfs server (owned by root
+      # and cannot be the user syncthing runs as: www-data) and create .stfolder
+      # required by syncthing
+      - name: prepare-sync-dir
+        image: busybox
+        command: ['sh', '-c', 'rm -f /sync/index.html && mkdir -p /sync/.stfolder && chown 33:33 /sync/.stfolder']
+        volumeMounts:
+        - name: data-vol
+          mountPath: /sync
+      containers:
+      - name: syncthing
+        image: {{ .Values.syncthing.image }}
+        imagePullPolicy: "IfNotPresent"
+        env:
+        # wordpress container www-data user
+        - name: PUID
+          value: "33"
+        # wordpress container www-data group
+        - name: PGID
+          value: "33"
+        volumeMounts:
+        - name: config-vol
+          mountPath: /config
+        - name: data-vol
+          mountPath: /sync
+      volumes:
+      - name: configmap-vol
+        configMap:
+          name: syncthing-config
+      - name: config-vol
+        emptyDir: {}
+      - name: data-vol
+        persistentVolumeClaim:
+          claimName: nfs

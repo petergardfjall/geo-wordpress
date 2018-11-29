@@ -1,0 +1,4 @@
+apiVersion: v1
+description: geo-wordpress
+name: geo-wordpress
+version: 0.1.0

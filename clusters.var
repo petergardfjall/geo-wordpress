@@ -1,0 +1,3 @@
+cluster0_region = "europe-west1"
+cluster1_region = "europe-west2"
+cluster2_region = "europe-west3"
