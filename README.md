@@ -13,7 +13,7 @@ After this, Kubernetes manifests for a geo-wordpress stack are rendered and
 deployed to the clusters. A separate geo-wordpress stack is run on each cluster
 and it consists of:
 
-- TiDB: a MySQL-compatible distributed database offering high availability and
+- [TiDB](https://github.com/pingcap/tidb): a MySQL-compatible distributed database offering high availability and
   strong (ACID) consistency. TiDB operates in a distributed manner and uses the
   Raft protocol to agree on and order transactions. One instance is run in each
   region, meaning that the database can tolerate the loss of one region and
