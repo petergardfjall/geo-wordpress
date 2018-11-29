@@ -27,7 +27,9 @@ and it consists of:
   the SyncThing processes on the other clusters and listens for filesystem
   notifications (inotify) on the Wordpress volume. Whenever a change is
   detected, the change is propagated to its peers. Think of it as a
-  bidirectional rsync.
+  bidirectional rsync. If a peer gets disconnected from its group it
+  should be able to catch up when it gets back, given that the system clocks on
+  the hosts are fairly well synchronized.
 
 The whole setup is fronted by a global cloud load-balancer set up to spread
 traffic across all regions. The load-balancer uses a health check to detect
