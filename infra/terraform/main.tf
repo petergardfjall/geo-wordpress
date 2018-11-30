@@ -25,7 +25,6 @@ variable "cluster2_region" {
   description = "Region where the third cluster is to be created. For example, 'europe-west2'."
 }
 
-
 variable "node_firewall_port_openings" {
   default     = ["22", "6443", "30800", "30080", "30084", "30160", "32379", "32380", "30400"]
 }
@@ -138,10 +137,19 @@ resource "google_compute_firewall" "node_firewall" {
   network  = "${google_compute_network.net.name}"
   # make sure prio is higher (that is, lower value) than load-balancer's firewall
   priority = "100"
+
+  # TODO: should really only open up necessary ports
   allow {
-    protocol = "tcp"
-    ports    = "${var.node_firewall_port_openings}"
+    protocol = "all"
   }
+  # allow {
+  #   protocol = "tcp"
+  #   ports    = "${var.node_firewall_port_openings}"
+  # }
+  # allow {
+  #   protocol = "udp"
+  #   ports    = "${var.node_firewall_port_openings}"
+  # }
 
   # rules will apply to instances matching these tags
   target_tags   = [ "node" ]
