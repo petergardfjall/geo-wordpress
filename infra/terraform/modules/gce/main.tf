@@ -241,6 +241,7 @@ data "template_file" "worker_boot_sh" {
 
   vars {
     cluster_name      = "${var.cluster_name}"
+    k8s_version       = "1.12.1"
     master_private_ip = "${local.master_private_ip}"
     kubeadm_token     = "${var.kubeadm_token}"
   }

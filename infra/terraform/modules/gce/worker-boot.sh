@@ -36,7 +36,7 @@ sudo tee /etc/apt/sources.list.d/kubernetes.list <<EOF
 deb https://apt.kubernetes.io/ kubernetes-xenial main
 EOF
 sudo apt-get update
-sudo apt-get install -y kubelet kubeadm kubectl
+sudo apt-get install -y kubelet=${k8s_version}-00 kubeadm=${k8s_version}-00 kubectl=${k8s_version}-00
 sudo apt-mark hold kubelet kubeadm kubectl
 
 sudo modprobe ip_vs
